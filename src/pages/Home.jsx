@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Phone } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL;
-
 const API_BASE = "/api";
 
 const allowedStatuses = [
@@ -17,40 +16,31 @@ const allowedStatuses = [
 
 const Home = () => {
   const [tickets, setTickets] = useState([]);
-  const fieldUserId = "0664969d-a6ec-4d67-b02d-aceca6fe9008";
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const fieldUserId = "0664969d-a6ec-4d67-b02d-aceca6fe9008";
 
-  // Function to refresh access token
   const refreshAccessToken = async () => {
     if (isRefreshing) return false;
     setIsRefreshing(true);
-
     try {
       const refreshToken = localStorage.getItem("refreshToken");
-      if (!refreshToken) throw new Error("No refresh token available");
+      if (!refreshToken) throw new Error("No refresh token");
 
-      const res = await fetch(`/api/auth/refresh`, {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to refresh token");
+      if (!res.ok) throw new Error(data.message || "Token refresh failed");
 
       localStorage.setItem("accessToken", data.data.accessToken);
       localStorage.setItem("refreshToken", data.data.refreshToken);
-      console.log("Access token refreshed successfully", data.data.accessToken);
-      console.log(
-        "Refresh token refreshed successfully",
-        data.data.refreshToken
-      );
       return true;
     } catch (err) {
-      console.error("Token refresh failed:", err);
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("fieldUserId");
+      console.error("Refresh failed:", err);
+      localStorage.clear();
       window.location.href = "/";
       return false;
     } finally {
@@ -58,7 +48,6 @@ const Home = () => {
     }
   };
 
-  // Generic fetch with auth and retry on 401
   const fetchWithAuth = async (url, options = {}) => {
     const accessToken = localStorage.getItem("accessToken");
     const headers = {
@@ -68,12 +57,11 @@ const Home = () => {
     };
 
     let response = await fetch(url, { ...options, headers });
-
     if (response.status === 401 && !isRefreshing) {
       const refreshed = await refreshAccessToken();
       if (refreshed) {
-        const newAccessToken = localStorage.getItem("accessToken");
-        headers.Authorization = `Bearer ${newAccessToken}`;
+        const newToken = localStorage.getItem("accessToken");
+        headers.Authorization = `Bearer ${newToken}`;
         response = await fetch(url, { ...options, headers });
       }
     }
@@ -81,9 +69,8 @@ const Home = () => {
     return response;
   };
 
-  // Fetch tickets
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchTickets = async () => {
       try {
         const res = await fetchWithAuth(
           `${API_URL}/field-ticket/${fieldUserId}`
@@ -91,42 +78,32 @@ const Home = () => {
         if (!res.ok) throw new Error("Failed to fetch tickets");
         const data = await res.json();
         setTickets(data);
-      } catch (error) {
-        console.error("Failed to fetch tickets:", error);
+      } catch (err) {
+        console.error("Error loading tickets:", err);
       }
     };
 
-    fetchData();
-  }, [fieldUserId]);
+    fetchTickets();
+  }, []);
 
-  // Handle status change
   const handleStatusChange = async (ticketId, newStatus) => {
     try {
       const res = await fetchWithAuth(`${API_URL}/field-ticket`, {
         method: "PUT",
         body: JSON.stringify({ id: ticketId, status: newStatus }),
       });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to update status");
-      }
-
-      const updatedTicket = await res.json();
-      setTickets((prevTickets) =>
-        prevTickets.map((ticket) =>
-          ticket._id === ticketId
-            ? { ...ticket, status: updatedTicket.status }
-            : ticket
+      if (!res.ok) throw new Error("Failed to update status");
+      const updated = await res.json();
+      setTickets((prev) =>
+        prev.map((t) =>
+          t._id === ticketId ? { ...t, status: updated.status } : t
         )
       );
-    } catch (error) {
-      console.error("Error updating status:", error);
-      alert("Failed to update status.");
+    } catch (err) {
+      alert("Status update failed.");
     }
   };
 
-  // Initiate call with redirect on 201
   const initiateCall = async (ticket) => {
     const payload = {
       fromId: ticket.field_guyId,
@@ -142,50 +119,53 @@ const Home = () => {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Call initiation failed");
-      }
-
       const result = await res.json();
-      console.log("Call initiated:", result);
+      if (!res.ok) throw new Error(result.message || "Call failed");
 
       if (res.status === 201) {
         window.location.href = `tel:${payload.serviceNumber}`;
       } else {
-        alert("Call initiated successfully!");
+        alert("Call initiated successfully");
       }
     } catch (err) {
-      console.error("Call error:", err);
-      alert("Failed to initiate call.");
+      alert("Call initiation failed.");
     }
   };
 
   return (
-    <div className="p-4">
+    <div className="min-h-screen bg-green-50 p-4">
       {tickets.length === 0 ? (
-        <p className="text-center text-gray-500">No open tickets found.</p>
+        <p className="text-center text-gray-500 text-sm">
+          No open tickets found.
+        </p>
       ) : (
         <div className="space-y-4">
-          {tickets.map((ticket, index) => (
+          {tickets.map((ticket, idx) => (
             <div
-              key={index}
-              className="bg-white p-4 rounded-xl shadow-md flex justify-between items-start"
+              key={idx}
+              className="bg-white rounded-xl shadow border border-green-100 p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-3"
             >
-              <div>
-                <h2 className="text-lg font-bold">{ticket.farmername}</h2>
-                <p>{ticket.farmernumber.replace("+91", "")}</p>
-                <p className="text-gray-700 text-sm">
-                  Taluk: {ticket.taluk} District: {ticket.district}
+              <div className="flex-1 space-y-1">
+                <h2 className="text-lg font-semibold text-green-800">
+                  {ticket.farmername}
+                </h2>
+                <p className="text-green-700 font-medium text-sm">
+                  {ticket.farmernumber.replace("+91", "")}
                 </p>
-                <p className="text-gray-700 text-sm">Crop: {ticket.cropName}</p>
-                <div className="mt-3 flex gap-2">
+                <p className="text-gray-700 text-sm">
+                  Taluk: <b>{ticket.taluk}</b> | District:{" "}
+                  <b>{ticket.district}</b>
+                </p>
+                <p className="text-sm text-gray-600">
+                  Crop: <b>{ticket.cropName}</b>
+                </p>
+                <div className="flex gap-2 mt-2">
                   <select
+                    className="bg-green-100 text-green-800 font-medium px-3 py-1 rounded-md border border-green-300 text-sm"
                     value={ticket.status || "pending"}
                     onChange={(e) =>
                       handleStatusChange(ticket._id, e.target.value)
                     }
-                    className="bg-blue-100 text-black px-3 py-1 rounded-md border border-blue-300"
                   >
                     {allowedStatuses.map((status) => (
                       <option key={status} value={status}>
@@ -193,19 +173,17 @@ const Home = () => {
                       </option>
                     ))}
                   </select>
-                  <button className="border border-gray-400 px-4 py-1 rounded-md text-black">
+                  <button className="text-green-700 border border-green-300 px-3 py-1 rounded-md text-sm hover:bg-green-50">
                     Form
                   </button>
                 </div>
               </div>
-              <div>
-                <button
-                  onClick={() => initiateCall(ticket)}
-                  className="bg-green-500 p-3 rounded-md flex items-center justify-center"
-                >
-                  <Phone className="text-black w-5 h-5" />
-                </button>
-              </div>
+              <button
+                onClick={() => initiateCall(ticket)}
+                className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-full flex items-center justify-center shadow-md transition-all"
+              >
+                <Phone className="w-5 h-5" />
+              </button>
             </div>
           ))}
         </div>
