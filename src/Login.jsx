@@ -10,10 +10,7 @@ const LoginWithOTP = () => {
 
   const TEMPLATE = "Markhet+Buyer";
 
-  const API_BASE =
-    import.meta.env.MODE == "development"
-      ? "/api"
-      : import.meta.env.VITE_BASE_URL;
+  const API_BASE = "/api";
 
   const navigate = useNavigate();
 

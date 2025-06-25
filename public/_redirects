@@ -1,0 +1,1 @@
+/api/*  http://ec2-43-204-114-19.ap-south-1.compute.amazonaws.com:8001/:splat  200
