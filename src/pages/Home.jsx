@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Phone } from "lucide-react";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const allowedStatuses = [
   "pending",
   "called",
@@ -47,7 +49,7 @@ const Home = () => {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("fieldUserId");
-      window.location.href = "/"; // Redirect to login
+      window.location.href = "/";
       return false;
     } finally {
       setIsRefreshing(false);
@@ -82,7 +84,7 @@ const Home = () => {
     const fetchData = async () => {
       try {
         const res = await fetchWithAuth(
-          `http://localhost:3003/field-ticket/${fieldUserId}`
+          `${API_URL}/field-ticket/${fieldUserId}`
         );
         if (!res.ok) throw new Error("Failed to fetch tickets");
         const data = await res.json();
@@ -98,7 +100,7 @@ const Home = () => {
   // Handle status change
   const handleStatusChange = async (ticketId, newStatus) => {
     try {
-      const res = await fetchWithAuth(`http://localhost:3003/field-ticket`, {
+      const res = await fetchWithAuth(`${API_URL}/field-ticket`, {
         method: "PUT",
         body: JSON.stringify({ id: ticketId, status: newStatus }),
       });
@@ -122,7 +124,7 @@ const Home = () => {
     }
   };
 
-  // Initiate call with redirect on 201 using serviceNumber
+  // Initiate call with redirect on 201
   const initiateCall = async (ticket) => {
     const payload = {
       fromId: ticket.field_guyId,
@@ -133,13 +135,10 @@ const Home = () => {
     };
 
     try {
-      const res = await fetchWithAuth(
-        "http://ec2-43-204-114-19.ap-south-1.compute.amazonaws.com:8001/calls/initiate",
-        {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await fetchWithAuth(`/api/calls/initiate`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
 
       if (!res.ok) {
         const error = await res.json();
@@ -150,7 +149,6 @@ const Home = () => {
       console.log("Call initiated:", result);
 
       if (res.status === 201) {
-        // Redirect to phone dialer with serviceNumber
         window.location.href = `tel:${payload.serviceNumber}`;
       } else {
         alert("Call initiated successfully!");
