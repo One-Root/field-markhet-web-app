@@ -8,8 +8,6 @@ const API_BASE =
     ? "/api"
     : import.meta.env.VITE_BASE_URL;
 
-console.log("API_BASE:", API_BASE);
-
 const allowedStatuses = [
   "pending",
   "called",
