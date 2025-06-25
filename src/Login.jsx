@@ -88,13 +88,13 @@ const LoginWithOTP = () => {
                 value={mobileNumber}
                 onChange={(e) => setNumber(e.target.value)}
                 placeholder="e.g. 9876543210"
-                className="w-full px-4 py-3 mb-5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full px-4 py-3 mb-5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none text-black"
                 required
               />
               <button
                 type="submit"
                 disabled={loading || mobileNumber.length < 10}
-                className="w-full bg-blue-600 hover:bg-blue-700 transition text-black font-medium py-3 rounded-md disabled:opacity-50"
+                className="w-full transition text-black bg-white font-medium py-3 rounded-md disabled:opacity-50"
               >
                 {loading ? "Sending OTP..." : "Send OTP"}
               </button>
@@ -109,13 +109,13 @@ const LoginWithOTP = () => {
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 placeholder="Enter OTP"
-                className="w-full px-4 py-3 mb-5 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:outline-none"
+                className="w-full text-black px-4 py-3 mb-5 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:outline-none"
                 required
               />
               <button
                 type="submit"
                 disabled={loading || otp.length < 4}
-                className="w-full bg-green-600 text-black hover:bg-green-700 transition font-medium py-3 rounded-md disabled:opacity-50"
+                className="w-full  text-black bg-white hover:bg-green-700 transition font-medium py-3 rounded-md disabled:opacity-50"
               >
                 {loading ? "Verifying..." : "Verify & Login"}
               </button>
