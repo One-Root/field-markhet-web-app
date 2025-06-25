@@ -9,7 +9,14 @@ const LoginWithOTP = () => {
   const [loading, setLoading] = useState(false);
 
   const TEMPLATE = "Markhet+Buyer";
-  const API_BASE = "/api";
+
+  const API_BASE =
+    import.meta.env.MODE == "development"
+      ? "/api"
+      : import.meta.env.VITE_BASE_URL;
+
+  console.log("API_BASE:", API_BASE);
+  s;
   const navigate = useNavigate();
 
   const sendOtp = async () => {

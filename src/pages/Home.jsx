@@ -3,6 +3,13 @@ import { Phone } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+const API_BASE =
+  import.meta.env.MODE == "development"
+    ? "/api"
+    : import.meta.env.VITE_BASE_URL;
+
+console.log("API_BASE:", API_BASE);
+
 const allowedStatuses = [
   "pending",
   "called",
@@ -135,7 +142,7 @@ const Home = () => {
     };
 
     try {
-      const res = await fetchWithAuth(`/api/calls/initiate`, {
+      const res = await fetchWithAuth(`${API_BASE}/calls/initiate`, {
         method: "POST",
         body: JSON.stringify(payload),
       });
